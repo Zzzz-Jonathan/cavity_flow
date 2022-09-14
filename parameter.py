@@ -45,16 +45,16 @@ class Validation_loader:
 
         self.batch = batch
 
-    def get(self, batch):
+    def get(self):
         if self.j > 20:
             self.dataset = my_shuffle(self.dataset)
             self.j = 0
 
         output = []
         for d in self.dataset:
-            output.append(d[self.i:self.i + batch])
+            output.append(d[self.i:self.i + self.batch])
 
-        self.i += batch
+        self.i += self.batch
         self.i = self.i % self.len
 
         output = tuple(output)
@@ -83,7 +83,7 @@ def my_shuffle(*args):
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 BATCH = 1024
 EPOCH = 10000
-LOSS = torch.nn.MSELoss
+LOSS = torch.nn.MSELoss().to(device)
 
 sampling_ratio = 2 ** (-4)
 validation_size = 2 ** 18

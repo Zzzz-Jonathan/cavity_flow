@@ -13,6 +13,8 @@ def my_shuffle(*args):
 
     return args
 
+a = (1,2,3,4,5)
+print(sum(a))
 
 
 

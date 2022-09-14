@@ -18,8 +18,7 @@ def active_fun():
     return Swish()
 
 
-def pde_loss(_x, _y):
-    [re, x, y] = torch.split(_x, 1, dim=1)
+def pde_loss(re, x, y, _y):
     [u, v, p] = torch.split(_y, 1, dim=1)
 
     uu = u * u
@@ -150,6 +149,11 @@ class ResLinear(torch.nn.Module):
         )
 
     def forward(self, x, label=None, pde=True):
+        _re, _x, _y = None, None, None
+        if pde:
+            _re, _x, _y = torch.split(x, 1, dim=1)
+            x = torch.cat([_re, _x, _y], dim=1)
+
         x1 = self.net1(x)
 
         x2 = self.net2(x1)
@@ -163,7 +167,7 @@ class ResLinear(torch.nn.Module):
         l_pde, l_data = None, None
 
         if pde:
-            l_pde = pde_loss(x, out)
+            l_pde = pde_loss(_re, _x, _y, out)
         if label is not None:
             l_data = data_loss(out, label)
 

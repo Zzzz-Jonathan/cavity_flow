@@ -6,7 +6,30 @@ import os
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from parameter import dataset, my_shuffle, sampling_ratio, validation_size
+from parameter import dataset, my_shuffle, sampling_ratio, validation_size, device, BATCH, Validation_loader
+
+sampled_data = np.load('data/sampled_data.npz')
+train_data, train_label = sampled_data['train_data_in'], sampled_data['train_label_in']
+validation_data_in, validation_label_in = sampled_data['validation_data_in'], sampled_data['validation_label_in']
+validation_data_out, validation_label_out = sampled_data['validation_data_out'], sampled_data['validation_label_out']
+
+icbc = np.load('data/icbc.npz')
+icbc_data, icbc_label = icbc['bc_data'], icbc['bc_label']
+
+collocation_point = np.load('data/collocation.npy')
+
+train_dataset = dataset(torch.FloatTensor(train_data).to(device),
+                        torch.FloatTensor(train_label).to(device),
+                        torch.FloatTensor(icbc_data).to(device),
+                        torch.FloatTensor(icbc_label).to(device),
+                        torch.FloatTensor(collocation_point).to(device))
+train_dataloader = DataLoader(dataset=train_dataset, batch_size=BATCH,
+                              shuffle=True, num_workers=4, drop_last=True)
+validation_dataloader = Validation_loader(torch.FloatTensor(validation_data_in).requires_grad_(False).to(device),
+                                          torch.FloatTensor(validation_label_in).requires_grad_(False).to(device),
+                                          torch.FloatTensor(validation_data_out).requires_grad_(False).to(device),
+                                          torch.FloatTensor(validation_label_out).requires_grad_(False).to(device),
+                                          batch=10 * BATCH)
 
 
 def save_boundary_collocation_data(path='data/'):
@@ -205,7 +228,7 @@ def save_reference(path='original_data/'):
 
 if __name__ == '__main__':
     # save_reference()
-    # save_training_dataset()
-    save_boundary_collocation_data()
+    save_training_dataset()
+    # save_boundary_collocation_data()
 
     pass
