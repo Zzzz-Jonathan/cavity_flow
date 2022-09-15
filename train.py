@@ -10,15 +10,19 @@ def module_save(nn, optimizer, it, ep, ls, name):
              'optimizer': optimizer.state_dict(),
              'epoch': ep,
              'iter': it, 'loss': ls}
-    torch.save(state, 'train_history/' + name)
+    torch.save(state, path + name)
 
+
+# pipreqs ./ --encoding=utf8 --force
+sgm = False
+path = './train_history/no_sgm/'
 
 if __name__ == '__main__':
     print(device)
     NN = ResLinear().to(device)
     opt = torch.optim.Adam(params=NN.parameters())
 
-    writer = SummaryWriter('./train_history')
+    writer = SummaryWriter(path)
     iter = 0
     min_loss_i, min_loss_o = 1e6, 1e6
 
@@ -27,11 +31,11 @@ if __name__ == '__main__':
             opt.zero_grad()
             iter += 1
 
-            t_data, t_label, i_data, i_label, c_data = t_data.requires_grad_(True), \
-                                                       t_label.requires_grad_(True), \
-                                                       i_data.requires_grad_(True), \
-                                                       i_label.requires_grad_(True), \
-                                                       c_data.requires_grad_(True)
+            t_data, t_label, i_data, i_label, c_data = t_data.to(device).requires_grad_(True), \
+                                                       t_label.to(device).requires_grad_(True), \
+                                                       i_data.to(device).requires_grad_(True), \
+                                                       i_label.to(device).requires_grad_(True), \
+                                                       c_data.to(device).requires_grad_(True)
             vd_i, vl_i, vd_o, vl_o = validation_dataloader.get()
 
             t_pde_loss, t_data_loss = NN(t_data, t_label)
@@ -39,7 +43,16 @@ if __name__ == '__main__':
             i_data_loss = (i_data_loss[0], i_data_loss[1])
             c_pde_loss, _ = NN(c_data)
 
-            loss = sum(t_pde_loss) + sum(t_data_loss) + sum(i_pde_loss) + sum(i_data_loss) + sum(c_pde_loss)
+            if sgm:
+                loss = torch.sigmoid(sum(t_pde_loss)) + \
+                       torch.sigmoid(sum(t_data_loss)) + \
+                       torch.sigmoid(sum(i_pde_loss)) + \
+                       torch.sigmoid(sum(i_data_loss)) + \
+                       torch.sigmoid(sum(c_pde_loss))
+            else:
+                loss = sum(t_pde_loss) + sum(t_data_loss) + \
+                       sum(i_pde_loss) + sum(i_data_loss) + \
+                       sum(c_pde_loss)
 
             _, vi_loss = NN(vd_i, vl_i, pde=False)
             _, vo_loss = NN(vd_o, vl_o, pde=False)
@@ -47,7 +60,9 @@ if __name__ == '__main__':
             loss.backward()
             opt.step()
 
-            writer.add_scalars('1_loss', {'total_loss': loss,
+            writer.add_scalars('1_loss', {'total_loss': sum(t_pde_loss) + sum(t_data_loss) +
+                                                        sum(i_pde_loss) + sum(i_data_loss) +
+                                                        sum(c_pde_loss),
                                           'train_loss': sum(t_pde_loss) + sum(t_data_loss),
                                           'v_in_loss': sum(vi_loss),
                                           'v_out_loss': sum(vo_loss),
@@ -80,4 +95,6 @@ if __name__ == '__main__':
 
             if min_loss_o > sum(vo_loss).item():
                 min_loss_o = sum(vo_loss).item()
-                module_save(NN, opt, iter, epoch, sum(vo_loss).item(),name= 'cavity_o')
+                module_save(NN, opt, iter, epoch, sum(vo_loss).item(), name='cavity_o')
+
+        print("Epoch %d finished !" % epoch)

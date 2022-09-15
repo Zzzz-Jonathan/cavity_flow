@@ -7,6 +7,7 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 from parameter import dataset, my_shuffle, sampling_ratio, validation_size, device, BATCH, Validation_loader
+# from parameter import collate_fn
 
 sampled_data = np.load('data/sampled_data.npz')
 train_data, train_label = sampled_data['train_data_in'], sampled_data['train_label_in']
@@ -18,11 +19,11 @@ icbc_data, icbc_label = icbc['bc_data'], icbc['bc_label']
 
 collocation_point = np.load('data/collocation.npy')
 
-train_dataset = dataset(torch.FloatTensor(train_data).to(device),
-                        torch.FloatTensor(train_label).to(device),
-                        torch.FloatTensor(icbc_data).to(device),
-                        torch.FloatTensor(icbc_label).to(device),
-                        torch.FloatTensor(collocation_point).to(device))
+train_dataset = dataset(torch.FloatTensor(train_data),
+                        torch.FloatTensor(train_label),
+                        torch.FloatTensor(icbc_data),
+                        torch.FloatTensor(icbc_label),
+                        torch.FloatTensor(collocation_point))
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=BATCH,
                               shuffle=True, num_workers=4, drop_last=True)
 validation_dataloader = Validation_loader(torch.FloatTensor(validation_data_in).requires_grad_(False).to(device),

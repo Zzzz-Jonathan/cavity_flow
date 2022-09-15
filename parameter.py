@@ -33,7 +33,26 @@ class dataset(Dataset):
         self.i = self.i % 100
 
         return self.train_data[index], self.train_target[index], \
-               self.icbc_data[icbc_idx], self.icbc_target[icbc_idx], self.c_data[c_idx]
+               self.icbc_data[icbc_idx], self.icbc_target[icbc_idx], \
+               self.c_data[c_idx]
+
+
+# def collate_fn(batch_x):
+#     tds, tls, icds, icls, cds = [], [], [], [], []
+#     for td, tl, icd, icl, cd in batch_x:
+#         tds.append(td)
+#         tls.append(tl)
+#         icds.append(icd)
+#         icls.append(icl)
+#         cds.append(cd)
+#
+#     tds = torch.stack(tds, dim=0)
+#     tls = torch.stack(tls, dim=0)
+#     icds = torch.stack(icds, dim=0)
+#     icls = torch.stack(icls, dim=0)
+#     cds = torch.stack(cds, dim=0)
+#
+#     return tds, tls, icds, icls, cds
 
 
 class Validation_loader:
@@ -80,9 +99,9 @@ def my_shuffle(*args):
     return args
 
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-BATCH = 1024
-EPOCH = 10000
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+BATCH = 20000
+EPOCH = 50000
 LOSS = torch.nn.MSELoss().to(device)
 
 sampling_ratio = 2 ** (-4)

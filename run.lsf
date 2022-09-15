@@ -1,0 +1,11 @@
+#BSUB -q gpu
+#BSUB -J cavity_flow
+#BSUB -o %J.out
+#BSUB -e %J.err
+#BSUB -R "select[hname='gpu02']"
+#BSUB -n 40
+
+module load python/anaconda3/5.2.0
+source activate my_env
+
+python /work/mae-zhangds/taiyi_cavity_flow/train.py &

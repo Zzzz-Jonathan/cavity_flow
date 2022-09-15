@@ -13,9 +13,11 @@ def my_shuffle(*args):
 
     return args
 
-a = (1,2,3,4,5)
-print(sum(a))
 
-
-
-
+a1 = torch.FloatTensor((1, 2))
+a2 = torch.FloatTensor((3, 4))
+a3 = torch.FloatTensor((5, 6))
+a4 = torch.FloatTensor((7, 8))
+a = ((a1, a2), (a3, a4))
+a = torch.FloatTensor(a)
+print(a)
