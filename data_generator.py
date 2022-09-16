@@ -120,9 +120,12 @@ def save_training_dataset(path='data/'):
              validation_label_out=validation_label_out)
 
 
-def load_data(path, load_xy=False):
+def load_data(path, load_xy=False, omega=False):
     with open(path, 'rb') as file:
         data = pickle.load(file)  # shape = 7, 513, 513
+
+        if omega:
+            return data[0, :, :, None]
 
         u = data[3, :, :, None]
         v = data[4, :, :, None]
@@ -229,7 +232,7 @@ def save_reference(path='original_data/'):
 
 if __name__ == '__main__':
     # save_reference()
-    save_training_dataset()
+    # save_training_dataset()
     # save_boundary_collocation_data()
 
     pass

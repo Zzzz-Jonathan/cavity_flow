@@ -1,17 +1,8 @@
 import torch
 from parameter import device, EPOCH
-from module import ResLinear
+from module import ResLinear, module_save
 from torch.utils.tensorboard import SummaryWriter
 from data_generator import train_dataloader, validation_dataloader
-
-
-def module_save(nn, optimizer, it, ep, ls, name):
-    state = {'model': nn.state_dict(),
-             'optimizer': optimizer.state_dict(),
-             'epoch': ep,
-             'iter': it, 'loss': ls}
-    torch.save(state, path + name)
-
 
 # pipreqs ./ --encoding=utf8 --force
 sgm = False
@@ -87,14 +78,14 @@ if __name__ == '__main__':
                                iter)
 
             if iter % 50 == 0:
-                module_save(NN, opt, iter, epoch, sum(t_data_loss).item(), name='cavity_rec')
+                module_save(NN, opt, iter, epoch, sum(t_data_loss).item(), path=path + 'cavity_rec')
 
             if min_loss_i > sum(vi_loss).item():
                 min_loss_i = sum(vi_loss).item()
-                module_save(NN, opt, iter, epoch, sum(vi_loss).item(), name='cavity_i')
+                module_save(NN, opt, iter, epoch, sum(vi_loss).item(), path=path + 'cavity_i')
 
             if min_loss_o > sum(vo_loss).item():
                 min_loss_o = sum(vo_loss).item()
-                module_save(NN, opt, iter, epoch, sum(vo_loss).item(), name='cavity_o')
+                module_save(NN, opt, iter, epoch, sum(vo_loss).item(), path=path + 'cavity_o')
 
         print("Epoch %d finished !" % epoch)

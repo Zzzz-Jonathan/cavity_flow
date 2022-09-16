@@ -1,3 +1,5 @@
+import os
+
 import torch
 from parameter import gradients
 from parameter import LOSS as L
@@ -62,6 +64,34 @@ def data_loss(_y, label):
     return L(u, u_l), L(v, v_l), L(p, p_l)
 
 
+def omega(x, y, _y):
+    [u, v, p] = torch.split(_y, 1, dim=1)
+
+    return gradients(v, x) - gradients(u, y)
+
+
+def module_load(path, map_device=torch.device('cpu')):
+    if os.path.exists(path):
+        state = torch.load(path, map_location=map_device)
+
+        epoch = state['epoch']
+        loss = state['loss']
+
+        print("Load success ! Epoch=%d, Loss=%.5f ." % (epoch, loss))
+
+        return state['model'], state['optimizer'], state['epoch'], state['iter'], state['loss']
+
+    return None
+
+
+def module_save(nn, optimizer, it, ep, ls, path):
+    state = {'model': nn.state_dict(),
+             'optimizer': optimizer.state_dict(),
+             'epoch': ep,
+             'iter': it, 'loss': ls}
+    torch.save(state, path)
+
+
 class Yulong_NN(torch.nn.Module):
     def __init__(self):
         super(Yulong_NN, self).__init__()
@@ -91,17 +121,28 @@ class Yulong_NN(torch.nn.Module):
             torch.nn.Linear(50, 3),
         )
 
-    def forward(self, x, label=None):
-        out = self.net(x)
+    def output(self, x):
+        return self.net(x)
 
-        l_pde = pde_loss(x, out)
+    def forward(self, x, label=None, pde=True, test=False):
+        if test:
+            return self.output(x)
 
+        _re, _x, _y = None, None, None
+        if pde:
+            _re, _x, _y = torch.split(x, 1, dim=1)
+            x = torch.cat([_re, _x, _y], dim=1)
+
+        out = self.output(x)
+
+        l_pde, l_data = None, None
+
+        if pde:
+            l_pde = pde_loss(_re, _x, _y, out)
         if label is not None:
             l_data = data_loss(out, label)
 
-            return l_pde, l_data
-
-        return l_pde
+        return l_pde, l_data
 
 
 class ResLinear(torch.nn.Module):
@@ -148,12 +189,7 @@ class ResLinear(torch.nn.Module):
             active_fun(),
         )
 
-    def forward(self, x, label=None, pde=True):
-        _re, _x, _y = None, None, None
-        if pde:
-            _re, _x, _y = torch.split(x, 1, dim=1)
-            x = torch.cat([_re, _x, _y], dim=1)
-
+    def output(self, x):
         x1 = self.net1(x)
 
         x2 = self.net2(x1)
@@ -163,6 +199,22 @@ class ResLinear(torch.nn.Module):
         x3 += self.res2(x2)
 
         out = self.net4(x3)
+
+        return out
+
+    def forward(self, x, label=None, pde=True, test=False, test_omega=False):
+        if test:
+            return self.output(x)
+
+        _re, _x, _y = None, None, None
+        if pde or test_omega:
+            _re, _x, _y = torch.split(x, 1, dim=1)
+            x = torch.cat([_re, _x, _y], dim=1)
+
+        out = self.output(x)
+
+        if test_omega:
+            return omega(_x, _y, out)
 
         l_pde, l_data = None, None
 
